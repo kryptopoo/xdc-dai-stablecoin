@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "$LIB_DIR/common.sh"
+
+
+tokens=$(jq -r ".tokens | keys_unsorted[]" "$CONFIG_FILE")
+
+for token in $tokens; do
+    gemAddr=$(jq -r ".tokens.${token} | .import.gem | values" "$CONFIG_FILE")
+    
+    if [[ "$gemAddr" == "" ]]; then
+        IFS='/' read -ra gemSrc <<< "$(jq -r ".tokens.${token} | .gemDeploy.src | values" "$CONFIG_FILE")"
+        IFS=' ' read -ra gemParams <<< "$(jq -r ".tokens.${token} | .gemDeploy.params[]" "$CONFIG_FILE" | tr '\r\n' ' ')"
+        gemAddr=$(dappCreate "${gemSrc[@]}" "${gemParams[@]}")
+    fi
+    logAddr "${token}" "${gemAddr}"
+
+    ilks=$(jq -r ".tokens.${token}.ilks | keys_unsorted[]" "$CONFIG_FILE")
+    joinSrc="$(jq -r ".tokens.${token} | .joinDeploy.src | values" "$CONFIG_FILE")"
+    IFS=' ' read -ra joinExtraParams <<< "$(jq -r ".tokens.${token} | .joinDeploy.extraParams[]" "$CONFIG_FILE" | tr '\r\n' ' ')"
+    for ilk in $ilks; do
+        ilkName=$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")
+        ilkEnvVar="${token}_${ilk}"
+
+        joinAddr=$(dappCreate dss-gem-joins "$joinSrc" "$MCD_VAT" "$ilkName" "$gemAddr" "${joinExtraParams[@]}")
+        logAddr "MCD_JOIN_${ilkEnvVar}" "$(eval "echo ${joinAddr}")"
+
+        flipDeploy="$(jq ".tokens.${token}.ilks.${ilk} | .flipDeploy!=null" "$CONFIG_FILE")"
+
+        if [[ "$flipDeploy" == true ]]; then
+            sethSend "$MCD_DEPLOY" "deployCollateralFlip(bytes32,address,address)" \
+                "$ilkName"                                                         \
+                "$joinAddr"                                                        \
+                "$(eval echo "\$PIP_${token}")"
+        else
+            calcType=$(jq -r ".tokens.${token}.ilks.${ilk}.clipDeploy.calc.type | values" "$CONFIG_FILE")
+            calc=$(dappCreate dss-deploy "$calcType")
+            logAddr "MCD_CLIP_CALC_${ilkEnvVar}" "${calc}"
+            sethSend "$calc" 'rely(address)' "$MCD_PAUSE_PROXY"
+            sethSend "$calc" 'deny(address)' "$ETH_FROM"
+
+            sethSend "$MCD_DEPLOY" "deployCollateralClip(bytes32,address,address,address)" \
+                "$ilkName"                                                                 \
+                "$joinAddr"                                   \
+                "$(eval echo "\$PIP_${token}")"                                            \
+                "$calc"
+        fi
+
+        # Just in case there is a reorg or the node is not up to date we keep checking until getting a result
+        keepChecking=true
+        export keepChecking
+        while [[ "$keepChecking" == true ]]
+        do
+            data=()
+            while IFS=$'\n' read -r line; do data+=("$line"); done < <(seth call "$MCD_DEPLOY" "ilks(bytes32)(address,address,address)" "$ilkName")
+
+            if [[ ${data[0]} != "0x0000000000000000000000000000000000000000" || ${data[1]} != "0x0000000000000000000000000000000000000000" ]]; then
+                keepChecking=false
+            else
+                echo "F/Clipper not found, checking again in five seconds..."
+                sleep 5
+            fi
+        done
+
+        exports+="
+        export ${token}=\"${gemAddr}\"
+        export MCD_JOIN_${ilkEnvVar}=\"${joinAddr}\"
+        "
+
+        if [[ "$flipDeploy" == true ]]; then
+            logAddr "MCD_FLIP_${ilkEnvVar}" "${data[0]}"
+            exports+="
+            export MCD_FLIP_${ilkEnvVar}=\"${data[0]}\"
+            "
+        else
+            logAddr "MCD_CLIP_${ilkEnvVar}" "${data[1]}"
+            exports+="
+            export MCD_CLIP_${ilkEnvVar}=\"${data[1]}\"
+            export MCD_CLIP_CALC_${ilkEnvVar}=\"${calc}\"
+            "
+        fi
+    done
+done
+
+cat > "$OUT_DIR/load-ilks-addr-temp" << EOF
+#!/bin/bash
+${exports}
+EOF

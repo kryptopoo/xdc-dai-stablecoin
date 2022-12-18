@@ -1,0 +1,950 @@
+{
+  "description": "xdc mainnet deployment",
+  "pauseDelay": "0",
+  "vat_line": "5000000",
+  "vow_wait": "561600",
+  "vow_dump": "250",
+  "vow_sump": "50000",
+  "vow_bump": "10000",
+  "vow_hump": "500000",
+  "cat_box": "10000000", 
+  "dog_hole": "100000000",
+  "jug_base": "0",
+  "pot_dsr": "0",
+  "cure_wait": "0",
+  "end_wait": "262800",
+  "esm_min": "100000",
+  "flap_beg": "2",
+  "flap_ttl": "1800",
+  "flap_tau": "259200",
+  "flap_lid": "150000",
+  "flop_beg": "3",
+  "flop_pad": "20",
+  "flop_ttl": "21600",
+  "flop_tau": "259200",
+  "flash_max": "500000000",
+  "tokens": {
+    "XDC": {
+      "import": {
+        "gem": "0x67eea43799f0bDb3b760052F49AB0316C854e7B1",
+        "pip": "0xb618C4d503B2C54d944Fb166121737D888F03185"
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "150",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "5",
+          "flipDeploy": {
+            "chop": "5",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "ETH": {
+      "gemDeploy": {
+        "src": "ds-weth/WETH9_",
+        "params": []
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1200",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "150",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "5",
+          "flipDeploy": {
+            "chop": "5",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        },
+        "B": {
+          "mat": "200",
+          "line": "0",
+          "autoLine": "50000000",
+          "autoLineGap": "5000000",
+          "autoLineTtl": "43200",
+          "dust": "1",
+          "duty": "4",
+          "clipDeploy": {
+            "chop": "5",
+            "hole": "1000",
+            "chip": "2",
+            "tip": "100",
+            "buf": "150",
+            "tail": "10800",
+            "cusp": "33.33",
+            "calc": {
+              "type": "LinearDecrease",
+              "tau":  "3600"
+            },
+            "cm_tolerance": "50"
+          }
+        },
+        "C": {
+          "mat": "120",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "10",
+          "clipDeploy": {
+            "chop": "5",
+            "hole": "1000",
+            "chip": "2",
+            "tip": "100",
+            "buf": "150",
+            "tail": "10800",
+            "cusp": "33.33",
+            "calc": {
+              "type": "StairstepExponentialDecrease",
+              "step": "10",
+              "cut":  "99"
+            },
+            "cm_tolerance": "50"
+          }
+        }
+      }
+    },
+    "REP": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/REP",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "5",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "180",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "10",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "OMG": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/OMG",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin2",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1.1",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "180",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "11.5",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "BAT": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/BAT",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "0.2",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "200",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "10.5",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "USDC": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/USDC",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin5",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "125",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        },
+        "B": {
+          "mat": "125",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "TUSD": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/TUSD",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin6",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "125",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "WBTC": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/WBTC",
+        "params": ["100000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin5",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "17000",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "150",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        },
+        "B": {
+          "mat": "130",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        },
+        "C": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "ZRX": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/ZRX",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "0.18",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "190",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "9.5",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "KNC": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/KNC",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "0.6",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "150",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "20",
+          "flipDeploy": {
+            "chop": "8",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "MANA": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/MANA",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "0.36",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "12",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "USDT": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/USDT",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin7",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "150",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "6",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "PAXUSD": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/PAXUSD",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "120",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "2",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "COMP": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/COMP",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "37",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "1",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "LRC": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/LRC",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "0.22",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "3",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "LINK": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/LINK",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "6.2",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "3",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "BAL": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/BAL",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "5.8",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "5.0",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "YFI": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/YFI",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "6000",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "4",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "GUSD": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/GUSD",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin8",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "101",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "4",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "UNI": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/UNI",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "5.6",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "3",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "RENBTC": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/RENBTC",
+        "params": ["100000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin5",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "17000",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "6",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "AAVE": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/AAVE",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "58",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "1000000",
+          "autoLine": "0",
+          "autoLineGap": "0",
+          "autoLineTtl": "0",
+          "dust": "1",
+          "duty": "6",
+          "flipDeploy": {
+            "chop": "13",
+            "dunk": "5",
+            "beg": "1",
+            "ttl": "3600",
+            "tau": "3600"
+          }
+        }
+      }
+    },
+    "MATIC": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/MATIC",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "0.85",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "175",
+          "line": "0",
+          "autoLine": "10000000",
+          "autoLineGap": "3000000",
+          "autoLineTtl": "28800",
+          "dust": "1",
+          "duty": "3",
+          "clipDeploy": {
+            "chop": "13",
+            "hole": "5000",
+            "chip": "0.1",
+            "tip": "300",
+            "buf": "130",
+            "tail": "8400",
+            "cusp": "40",
+            "calc": {
+              "type": "StairstepExponentialDecrease",
+              "step": "90",
+              "cut":  "99"
+            },
+            "cm_tolerance": "95"
+          }
+        }
+      }
+    },
+    "WSTETH": {
+      "gemDeploy": {
+        "src": "dss-gem-joins/WSTETH",
+        "params": ["1000000000000000000000000"]
+      },
+      "joinDeploy": {
+        "src": "GemJoin",
+        "extraParams": []
+      },
+      "pipDeploy": {
+        "osmDelay": "0",
+        "type": "value",
+        "price": "1300",
+        "signers": []
+      },
+      "ilks": {
+        "A": {
+          "mat": "160",
+          "line": "0",
+          "autoLine": "50000000",
+          "autoLineGap": "3000000",
+          "autoLineTtl": "28800",
+          "dust": "10000",
+          "duty": "4",
+          "clipDeploy": {
+            "chop": "13",
+            "hole": "3000000",
+            "chip": "0.1",
+            "tip": "300",
+            "buf": "130",
+            "tail": "8400",
+            "cusp": "40",
+            "calc": {
+              "type": "StairstepExponentialDecrease",
+              "step": "90",
+              "cut":  "99"
+            },
+            "cm_tolerance": "50"
+          }
+        }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "$LIB_DIR/common.sh"
+
+loadAddresses
+
+tokens=$(jq -r ".tokens | keys_unsorted[]" "$CONFIG_FILE")
+for token in $tokens; do
+    type=$(jq -r ".tokens.${token} | .pipDeploy | .type" "$CONFIG_FILE")
+    if [[ "$type" == "value" ]]; then # Takes the first token which its pip is a value (not a median, so can be manipulated easily)
+        break
+    fi
+done
+
+ilk=$(jq -r ".tokens.${token}.ilks | keys_unsorted[0]" "$CONFIG_FILE")
+
+sethSend "$CDP_MANAGER" 'open(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")" "$ETH_FROM"
+ID=$(seth call "$CDP_MANAGER" 'cdpi()(uint256)')
+URN=$(seth call "$CDP_MANAGER" 'urns(uint256)(address)' "$ID")
+
+if [[ "${token}" == "ETH" ]]; then
+    sethSend "$ETH" 'deposit()' --value "$(seth --to-wei 5 ETH)"
+fi
+
+sethSend "$(eval echo "\$$token")" "approve(address,uint256)" "$(eval echo "\$MCD_JOIN_${token}_${ilk}")" "$(seth --to-uint256 "$(seth --to-wei 5 ETH)")"
+
+sethSend "$(eval echo "\$MCD_JOIN_${token}_${ilk}")" 'join(address,uint256)' "$URN" "$(seth --to-uint256 "$(seth --to-wei 5 ETH)")"
+
+dink=$(seth --to-int256 "$(seth --to-wei 5 eth)")
+mat=$(jq -r ".tokens.${token}.ilks.${ilk} | .mat" "$CONFIG_FILE")
+price=$(jq -r ".tokens.${token} | .pipDeploy | .price" "$CONFIG_FILE")
+dart=$(seth --to-int256 "$(seth --to-wei "$(echo "5 * $price * 100 / $mat" | bc -l)" eth)") # Max debt amount
+
+"$LIBEXEC_DIR"/setters/set-price "$token" "$price"
+
+sethSend "$MCD_SPOT" 'poke(bytes32)' "$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")"
+
+sethSend "$CDP_MANAGER" 'frob(uint256,int256,int256)' "$ID" "$dink" "$dart"
+
+"$LIBEXEC_DIR"/setters/set-price "$token" "$(echo "$price - 1" | bc -l)"
+sethSend "$MCD_SPOT" 'poke(bytes32)' "$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")"
+
+# Bite CDP
+sethSend "$MCD_CAT" 'bite(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")" "$URN"

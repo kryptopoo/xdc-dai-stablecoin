@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "$LIB_DIR/common.sh"
+
+# Get config variables
+CONFIG_FILE="$OUT_DIR/config.json"
+# Get addresses
+loadAddresses
+
+log "SET ILKS FAUCET:"
+
+f=$(jq -r ".import.faucet | values" "$CONFIG_FILE")
+newFaucet=false
+if [[ -z "$f" ]]; then
+    newFaucet=true
+fi
+
+tokens=$(jq -r ".tokens | keys_unsorted[]" "$CONFIG_FILE")
+# Send funds to the Faucet
+for token in $tokens; do
+    supply=$(jq -r ".tokens.${token} | .gemDeploy.faucetSupply | values" "$CONFIG_FILE")
+    if [[ "$supply" != "" && "$supply" != 0 ]]; then
+        sethSend "$(eval echo "\$$token")" 'transfer(address,uint256)' "$FAUCET" "$supply"
+    fi
+
+    if [[ "$newFaucet" == true ]]; then
+        # If the faucet was created in this deployment run, then we can set amount into it for the token
+        amount=$(jq -r ".tokens.${token} | .gemDeploy.faucetAmount | values" "$CONFIG_FILE")
+        if [[ "$amount" != "" && "$amount" != 0 ]]; then
+            sethSend "$FAUCET" 'setAmt(address,uint256)' "$(eval echo "\$${token}")" "$amount"
+        fi
+    fi
+done

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "$LIB_DIR/common.sh"
+
+# Get config variables
+CONFIG_FILE="$OUT_DIR/config.json"
+# Get addresses
+loadAddresses
+
+log "SET SPOTTER POKE:"
+
+tokens=$(jq -r ".tokens | keys_unsorted[]" "$CONFIG_FILE")
+for token in $tokens; do
+    # Check if MCD_SPOT is whitelisted or $PIP_${token} doesn't have a whitelist
+    set +e; WHITELISTED=$(seth call "$(eval echo "\$PIP_${token}")" 'bud(address)(uint256)' "$MCD_SPOT" 2>/dev/null); set -e
+
+    # "" : Doesn't have whitelist
+    # "0": Has whitelist and MCD_SPOT is not whitelisted
+    # "1": Has whitelist and MCD_SPOT is whitelisted
+
+    if [[ "$WHITELISTED" == "" || "$WHITELISTED" == "1" ]]; then
+        ilks=$(jq -r ".tokens.${token}.ilks | keys_unsorted[]" "$CONFIG_FILE")
+        for ilk in $ilks; do
+            sethSend "$MCD_SPOT" 'poke(bytes32)' "$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")"
+        done
+    fi
+done

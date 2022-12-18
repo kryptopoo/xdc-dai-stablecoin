@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "$LIB_DIR/common.sh"
+
+# Get config variables
+CONFIG_FILE="$OUT_DIR/config.json"
+# Get addresses
+loadAddresses
+
+log "SET ILKS LINE:"
+
+tokens=$(jq -r ".tokens | keys_unsorted[]" "$CONFIG_FILE")
+for token in $tokens; do
+    ilks=$(jq -r ".tokens.${token}.ilks | keys_unsorted[]" "$CONFIG_FILE")
+    for ilk in $ilks; do
+        ilkBytes32="$(seth --to-bytes32 "$(seth --from-ascii "${token}-${ilk}")")"
+
+        line="$(jq -r ".tokens.${token}.ilks.${ilk} | .line" "$CONFIG_FILE")"
+        line=$(echo "$line"*10^45 | bc)
+
+        autoLine="$(jq -r ".tokens.${token}.ilks.${ilk} | .autoLine" "$CONFIG_FILE")"
+        autoLine=$(echo "$autoLine"*10^45 | bc)
+
+        lineGtZero=$(echo "$line > 0" | bc);
+        autoLineGtZero=$(echo "$autoLine > 0" | bc);
+
+        # Only set the line if the auto line module is not active for this collateral
+        if [[ "$lineGtZero" == 1 && "$autoLineGtZero" == 0 ]]; then
+            calldata="$(seth calldata 'file(address,address,address,bytes32,bytes32,uint256)' "$MCD_PAUSE" "$MCD_GOV_ACTIONS" "$MCD_VAT" "$ilkBytes32" "$(seth --to-bytes32 "$(seth --from-ascii "line")")" "$line")"
+            sethSend "$PROXY_DEPLOYER" 'execute(address,bytes memory)' "$PROXY_PAUSE_ACTIONS" "$calldata"
+        fi
+
+        if [[ "$autoLineGtZero" == 1 ]]; then
+            autoLineGap="$(jq -r ".tokens.${token}.ilks.${ilk} | .autoLineGap" "$CONFIG_FILE")"
+            autoLineGap=$(echo "$autoLineGap"*10^45 | bc)
+            autoLineTtl="$(jq -r ".tokens.${token}.ilks.${ilk} | .autoLineTtl" "$CONFIG_FILE")"
+
+            # Set the auto line module
+            sethSend "$MCD_IAM_AUTO_LINE" 'setIlk(bytes32,uint256,uint256,uint256)' "$ilkBytes32" "$autoLine" "$autoLineGap" "$autoLineTtl"
+            # Set the initial debt ceiling to the gap value
+            sethSend "$MCD_IAM_AUTO_LINE" 'exec(bytes32)' "$ilkBytes32"
+        fi
+    done
+done
+
+sethSend "$MCD_IAM_AUTO_LINE" 'rely(address)' "$MCD_PAUSE_PROXY"
+sethSend "$MCD_IAM_AUTO_LINE" 'deny(address)' "$ETH_FROM"

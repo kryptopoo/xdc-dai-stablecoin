@@ -1,0 +1,376 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "${LIB_DIR:-$(cd "${0%/*}/../lib"&&pwd)}/common.sh"
+
+# Get config variables
+CONFIG_FILE="$OUT_DIR/config.json"
+# Get addresses
+loadAddresses
+
+# shellcheck disable=SC2034
+AUTHED="0x0000000000000000000000000000000000000000000000000000000000000001"
+# shellcheck disable=SC2034
+NOT_AUTHED="0x0000000000000000000000000000000000000000000000000000000000000000"
+# shellcheck disable=SC2034
+ZERO_ADDR="0x0000000000000000000000000000000000000000"
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+ok() {
+    printf '%b\n' "${GREEN}✓ OK${NC}"
+}
+
+notok() {
+    printf '%b\n' "${RED}❌NOT OK${NC}"
+}
+
+checkRely() {
+    local CHECK
+    CHECK=$(seth call "${!1}" 'wards(address)' "${!2}")
+
+    printf "RELY: %s -> %s -> %s -> " "${1}" "${2}" "${3}"
+    if [[ $(toLower "${!3}") == $(toLower "${CHECK}") ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+checkAuthority() {
+    local CHECK
+    CHECK=$(seth call "${!1}" 'authority()(address)')
+
+    printf "AUTH: %s -> %s -> " "${1}" "${2}"
+    if [[ $(toLower "${!2}") == $(toLower "${CHECK}") ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+checkOwner() {
+    local CHECK
+    CHECK=$(seth call "${!1}" 'owner()(address)')
+
+    printf "OWN: %s -> %s -> " "${1}" "${2}"
+    if [[ $(toLower "${!2}") == $(toLower "${CHECK}") ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+checkRoot() {
+    local CHECK
+    CHECK=$(seth call "${!1}" 'root()(address)')
+
+    printf "OWN: %s -> %s -> " "${1}" "${2}"
+    if [[ $(toLower "${!2}") == $(toLower "${CHECK}") ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+canCall() {
+    local authority
+    local CHECK
+    authority=$(seth call "${!2}" 'authority()(address)')
+    CHECK=$(seth call "${authority}" 'canCall(address,address,bytes4)(bool)' "${!1}" "${!2}" "$(seth sig "$3")")
+
+    printf "CALL: %s -> %s -> %s -> " "${1}" "${2}" "${3}"
+    if [[ $CHECK == true ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+checkWhitelist() {
+    local CHECK
+    CHECK=$(seth call "${!1}" 'bud(address)(uint256)' "${!2}" | sed 's/^0*//')
+
+    printf "WHITELIST: %s -> %s -> " "${1}" "${2}"
+    if [[ "$CHECK" == 1 ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+checkInOsmMom() {
+    local CHECK
+    CHECK=$(seth call "$OSM_MOM" 'osms(bytes32)(address)' "$(seth --to-bytes32 "$(seth --from-ascii "${1}")")")
+
+    printf "OSM-MOM: %s -> %s -> " "${1}" "${2}"
+    if [[ "$CHECK" == "${!2}" ]]; then
+        ok
+    else
+        notok
+    fi
+}
+
+tokens=$(jq -r ".tokens | keys_unsorted[]" "$CONFIG_FILE")
+
+# vat
+checkRely "MCD_VAT" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_VAT" "MCD_CAT" "AUTHED"
+checkRely "MCD_VAT" "MCD_JUG" "AUTHED"
+checkRely "MCD_VAT" "MCD_POT" "AUTHED"
+checkRely "MCD_VAT" "MCD_SPOT" "AUTHED"
+checkRely "MCD_VAT" "MCD_END" "AUTHED"
+checkRely "MCD_VAT" "MCD_ESM" "AUTHED"
+checkRely "MCD_VAT" "MCD_IAM_AUTO_LINE" "AUTHED"
+checkRely "MCD_VAT" "MCD_FLASH" "AUTHED"
+checkRely "MCD_VAT" "MCD_VEST_DAI" "AUTHED"
+checkRely "MCD_VAT" "MCD_PAUSE_PROXY" "AUTHED"
+for token in $tokens; do
+    ilks=$(jq -r ".tokens.${token}.ilks | keys_unsorted[]" "$CONFIG_FILE")
+    for ilk in $ilks; do
+        checkRely "MCD_VAT" "MCD_JOIN_${token}_${ilk}" "AUTHED"
+        checkRely "MCD_JOIN_${token}_${ilk}" "MCD_PAUSE_PROXY" "AUTHED"
+        checkRely "MCD_JOIN_${token}_${ilk}" "DEPLOYER" "NOT_AUTHED"
+    done
+done
+
+# cat
+checkRely "MCD_CAT" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_CAT" "MCD_END" "AUTHED"
+checkRely "MCD_CAT" "MCD_PAUSE_PROXY" "AUTHED"
+
+# vow
+checkRely "MCD_VOW" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_VOW" "MCD_CAT" "AUTHED"
+checkRely "MCD_VOW" "MCD_END" "AUTHED"
+checkRely "MCD_VOW" "MCD_PAUSE_PROXY" "AUTHED"
+
+# jug
+checkRely "MCD_JUG" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_JUG" "MCD_PAUSE_PROXY" "AUTHED"
+
+# pot
+checkRely "MCD_POT" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_POT" "MCD_PAUSE_PROXY" "AUTHED"
+
+# dai
+checkRely "MCD_DAI" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_DAI" "MCD_JOIN_DAI" "AUTHED"
+
+# spotter
+checkRely "MCD_SPOT" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_SPOT" "MCD_PAUSE_PROXY" "AUTHED"
+
+# flap
+checkRely "MCD_FLAP" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_FLAP" "MCD_VOW" "AUTHED"
+checkRely "MCD_FLAP" "MCD_PAUSE_PROXY" "AUTHED"
+
+# flop
+checkRely "MCD_FLOP" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_FLOP" "MCD_VOW" "AUTHED"
+checkRely "MCD_FLOP" "MCD_PAUSE_PROXY" "AUTHED"
+
+# cure
+checkRely "MCD_CURE" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_CURE" "MCD_END" "AUTHED"
+checkRely "MCD_CURE" "MCD_PAUSE_PROXY" "AUTHED"
+
+# end
+checkRely "MCD_END" "MCD_DEPLOY" "NOT_AUTHED"
+checkRely "MCD_END" "MCD_ESM" "AUTHED"
+checkRely "MCD_END" "MCD_PAUSE_PROXY" "AUTHED"
+
+# flips/clips
+for token in $tokens; do
+    ilks=$(jq -r ".tokens.${token}.ilks | keys_unsorted[]" "$CONFIG_FILE")
+    for ilk in $ilks; do
+        flipDeploy="$(jq ".tokens.${token}.ilks.${ilk} | .flipDeploy!=null" "$CONFIG_FILE")"
+        if [[ "$flipDeploy" == true ]]; then
+            checkRely "MCD_FLIP_${token}_${ilk}" "MCD_DEPLOY" "NOT_AUTHED"
+            checkRely "MCD_FLIP_${token}_${ilk}" "MCD_CAT" "AUTHED"
+            checkRely "MCD_FLIP_${token}_${ilk}" "MCD_END" "AUTHED"
+            checkRely "MCD_FLIP_${token}_${ilk}" "MCD_PAUSE_PROXY" "AUTHED"
+            checkRely "MCD_FLIP_${token}_${ilk}" "FLIPPER_MOM" "AUTHED"
+            checkRely "MCD_FLIP_${token}_${ilk}" "MCD_ESM" "AUTHED"
+        else
+            checkRely "MCD_CLIP_${token}_${ilk}" "MCD_DEPLOY" "NOT_AUTHED"
+            checkRely "MCD_CLIP_${token}_${ilk}" "MCD_DOG" "AUTHED"
+            checkRely "MCD_CLIP_${token}_${ilk}" "MCD_END" "AUTHED"
+            checkRely "MCD_CLIP_${token}_${ilk}" "MCD_PAUSE_PROXY" "AUTHED"
+            checkRely "MCD_CLIP_${token}_${ilk}" "CLIPPER_MOM" "AUTHED"
+            checkRely "MCD_CLIP_${token}_${ilk}" "MCD_ESM" "AUTHED"
+            checkRely "MCD_DOG" "MCD_CLIP_${token}_${ilk}" "AUTHED"
+            checkRely "MCD_VAT" "MCD_CLIP_${token}_${ilk}" "AUTHED"
+        fi
+    done
+done
+
+# flipperMom
+checkOwner "FLIPPER_MOM" "MCD_PAUSE_PROXY"
+checkAuthority "FLIPPER_MOM" "MCD_ADM"
+
+# faucet
+faucet=$(jq -r ".import.faucet | values" "$CONFIG_FILE")
+if [[ -z "$faucet" ]]; then
+    checkRely "FAUCET" "DEPLOYER" "AUTHED"
+fi
+
+# pause
+checkOwner "MCD_PAUSE" "ZERO_ADDR"
+checkAuthority "MCD_PAUSE" "MCD_ADM"
+
+# chief
+checkOwner "MCD_ADM" "ZERO_ADDR"
+checkAuthority "MCD_ADM" "MCD_ADM"
+
+# gov
+checkOwner "MCD_GOV" "MCD_PAUSE_PROXY"
+canCall "MCD_FLOP" "MCD_GOV" "mint(address,uint256)"
+canCall "MCD_FLAP" "MCD_GOV" "burn(address,uint256)"
+canCall "MCD_VEST_MKR" "MCD_GOV" "mint(address,uint256)"
+
+# gov guard
+if [[ -n "$GOV_GUARD" ]]; then
+    checkRoot "GOV_GUARD" "MCD_PAUSE_PROXY"
+    checkAuthority "MCD_GOV" "GOV_GUARD"
+fi
+
+# iou
+if [[ -n "$MCD_IOU" ]]; then
+    checkOwner "MCD_IOU" "MCD_ADM"
+    checkAuthority "MCD_IOU" "ZERO_ADDR"
+fi
+
+# osms and medians whitelist
+for token in $tokens; do
+    pipAddr=$(jq -r ".tokens.${token} | .import.pip | values" "$CONFIG_FILE")
+    type=$(jq -r ".tokens.${token} | .pipDeploy | .type | values" "$CONFIG_FILE")
+    osmDelay=$(jq -r ".tokens.${token} | .pipDeploy | .osmDelay | values" "$CONFIG_FILE")
+
+    ilks=$(jq -r ".tokens.${token}.ilks | keys_unsorted[]" "$CONFIG_FILE")
+    # If new feed
+    if [[ "$pipAddr" == "" ]]; then
+        # If feed is a Value
+        if [[ "$type" == "value" ]]; then
+            checkOwner "VAL_${token}" "MCD_PAUSE_PROXY"
+            checkAuthority "VAL_${token}" "ZERO_ADDR"
+        fi
+
+        # If feed is a Median
+        if [[ "$type" == "median" ]]; then
+            checkRely "VAL_${token}" "DEPLOYER" "NOT_AUTHED"
+            checkRely "VAL_${token}" "MCD_PAUSE_PROXY" "AUTHED"
+
+            # If end point is an OSM
+            if [[ "$osmDelay" -gt 0 ]]; then
+                checkWhitelist "VAL_${token}" "PIP_${token}"
+            fi
+        fi
+
+        # If end point is an OSM
+        if [[ "$osmDelay" -gt 0 ]]; then
+            checkRely "PIP_${token}" "DEPLOYER" "NOT_AUTHED"
+            checkRely "PIP_${token}" "MCD_PAUSE_PROXY" "AUTHED"
+            checkRely "PIP_${token}" "OSM_MOM" "AUTHED"
+            for ilk in $ilks; do
+                checkInOsmMom "${token}-${ilk}" "PIP_${token}"
+            done
+        fi
+
+        # If end point is an OSM or a Median
+        if [[ "$osmDelay" -gt 0 || "$type" == "median" ]]; then
+            checkWhitelist "PIP_${token}" "MCD_SPOT"
+            checkWhitelist "PIP_${token}" "MCD_END"
+
+            for ilk in $ilks; do
+                # If liquidator is a Clipper
+                flipDeploy="$(jq ".tokens.${token}.ilks.${ilk} | .flipDeploy!=null" "$CONFIG_FILE")"
+                if [[ "$flipDeploy" == false ]]; then
+                    checkWhitelist "PIP_${token}" "MCD_CLIP_${token}_${ilk}"
+                    checkWhitelist "PIP_${token}" "CLIPPER_MOM"
+                fi
+            done
+        fi
+    # Already existing feed
+    else
+        # Check if $PIP_${token} has wards (OSM or Median) otherwise is a direct DSValue
+        set +e; WARDS=$(seth call "$(eval echo "\$PIP_${token}")" 'wards(address)(uint256)' "$ZERO_ADDR" 2>/dev/null); set -e
+        if [[ "$WARDS" == "0" || "$WARDS" == "1" ]]; then
+            checkRely "PIP_${token}" "DEPLOYER" "NOT_AUTHED"
+            checkRely "PIP_${token}" "MCD_PAUSE_PROXY" "AUTHED"
+        else
+            checkOwner "PIP_${token}" "MCD_PAUSE_PROXY"
+            checkAuthority "PIP_${token}" "ZERO_ADDR"
+        fi
+
+        # Check if $PIP_${token} has whitelist (OSM or Median)
+        set +e; WHITELISTED=$(seth call "$(eval echo "\$PIP_${token}")" 'bud(address)(uint256)' "$ZERO_ADDR" 2>/dev/null); set -e
+        if [[ "$WHITELISTED" == "0" || "$WHITELISTED" == "1" ]]; then
+            checkWhitelist "PIP_${token}" "MCD_SPOT"
+            checkWhitelist "PIP_${token}" "MCD_END"
+            for ilk in $ilks; do
+                flipDeploy="$(jq ".tokens.${token}.ilks.${ilk} | .flipDeploy!=null" "$CONFIG_FILE")"
+                if [[ "$flipDeploy" == false ]]; then
+                    checkWhitelist "PIP_${token}" "MCD_CLIP_${token}_${ilk}"
+                    checkWhitelist "PIP_${token}" "CLIPPER_MOM"
+                fi
+            done
+        fi
+
+        # Check if $PIP_${token} is specifically an OSM
+        set +e; src=$(seth call "$(eval echo "\$PIP_${token}")" 'src()(address)' 2>/dev/null); set -e;
+        if [[ ${#src} == 42 && "${src:0:2}" == "0x" ]]; then
+            checkRely "PIP_${token}" "OSM_MOM" "AUTHED"
+            for ilk in $ilks; do
+                checkInOsmMom "${token}-${ilk}" "PIP_${token}"
+            done
+        fi
+    fi
+done
+
+# osmMom
+checkOwner "OSM_MOM" "MCD_PAUSE_PROXY"
+checkAuthority "OSM_MOM" "MCD_ADM"
+
+# autoLine
+checkRely "MCD_IAM_AUTO_LINE" "DEPLOYER" "NOT_AUTHED"
+checkRely "MCD_IAM_AUTO_LINE" "MCD_PAUSE_PROXY" "AUTHED"
+
+# ilk-registry
+checkRely "ILK_REGISTRY" "DEPLOYER" "NOT_AUTHED"
+checkRely "ILK_REGISTRY" "MCD_PAUSE_PROXY" "AUTHED"
+
+# dssFlash
+checkRely "MCD_FLASH" "DEPLOYER" "NOT_AUTHED"
+checkRely "MCD_FLASH" "MCD_PAUSE_PROXY" "AUTHED"
+checkRely "MCD_FLASH" "MCD_ESM" "NOT_AUTHED"
+
+# chainlog
+checkRely "CHANGELOG" "DEPLOYER" "NOT_AUTHED"
+checkRely "CHANGELOG" "MCD_PAUSE_PROXY" "AUTHED"
+
+# dssVest
+checkRely "MCD_VEST_DAI" "DEPLOYER" "NOT_AUTHED"
+checkRely "MCD_VEST_DAI" "MCD_PAUSE_PROXY" "AUTHED"
+checkRely "MCD_VEST_MKR" "DEPLOYER" "NOT_AUTHED"
+checkRely "MCD_VEST_MKR" "MCD_PAUSE_PROXY" "AUTHED"
+checkRely "MCD_VEST_MKR_TREASURY" "DEPLOYER" "NOT_AUTHED"
+checkRely "MCD_VEST_MKR_TREASURY" "MCD_PAUSE_PROXY" "AUTHED"

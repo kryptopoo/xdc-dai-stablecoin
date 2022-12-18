@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+
+#  Copyright (C) 2019-2021 Maker Ecosystem Growth Holdings, INC.
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# shellcheck source=lib/common.sh
+. "$LIB_DIR/common.sh"
+
+# If no Governance token is defined, create one
+if [ -z "$MCD_GOV" ]
+then
+    MCD_GOV=$(dappCreate ds-token DSToken '"MKR"')
+    logAddr "MCD_GOV" "$MCD_GOV"
+fi
+
+# Create deploy contract
+MCD_DEPLOY=$(dappCreate dss-deploy-optimized-runs-1 DssDeploy)
+logAddr "MCD_DEPLOY" "$MCD_DEPLOY"
+
+sethSend "$MCD_DEPLOY" "addFabs1(address,address,address,address,address,address,address)" "$VAT_FAB" "$JUG_FAB" "$VOW_FAB" "$CAT_FAB" "$DOG_FAB" "$DAI_FAB" "$MCD_JOIN_DAI_FAB"
+sethSend "$MCD_DEPLOY" "addFabs2(address,address,address,address,address,address,address,address,address,address,address)" "$FLAP_FAB" "$FLOP_FAB" "$FLIP_FAB" "$CLIP_FAB" "$CALC_FAB" "$SPOT_FAB" "$POT_FAB" "$CURE_FAB" "$END_FAB" "$ESM_FAB" "$PAUSE_FAB"
+
+# If no Authority is defined, create one
+if [ -z "$MCD_ADM" ]
+then
+    MCD_ADM=$(dappCreate ds-roles DSRoles)
+    logAddr "MCD_ADM" "$MCD_ADM"
+    sethSend "$MCD_ADM" 'setRootUser(address,bool)' "$ETH_FROM" true
+fi
+
+# Deploy VAT
+sethSend "$MCD_DEPLOY" "deployVat()"
+
+# Deploy MCD
+sethSend "$MCD_DEPLOY" "deployDai(uint256)" "$(seth rpc net_version)"
+
+# Deploy Taxation
+sethSend "$MCD_DEPLOY" "deployTaxation()"
+
+# Deploy Auctions
+sethSend "$MCD_DEPLOY" "deployAuctions(address)" "$MCD_GOV"
+
+# Deploy Liquidation
+sethSend "$MCD_DEPLOY" "deployLiquidator()"
+
+# Deploy End
+sethSend "$MCD_DEPLOY" "deployEnd()"
+
+# Deploy pause
+MCD_PAUSE_DELAY=${MCD_PAUSE_DELAY:-"3600"}
+sethSend "$MCD_DEPLOY" "deployPause(uint256,address)" "$(seth --to-uint256 "$MCD_PAUSE_DELAY")" "$MCD_ADM"
+
+# Deploy ESM
+MCD_ESM_MIN=${MCD_ESM_MIN:-"$(seth --to-uint256 "$(seth --to-wei 50000 "eth")")"}
+sethSend "$MCD_DEPLOY" "deployESM(address,uint256)" "$MCD_GOV" "$MCD_ESM_MIN"
+
+# Get addresses from Deploy contract
+MCD_VAT="$(seth call "$MCD_DEPLOY" "vat()(address)")"
+MCD_JUG="$(seth call "$MCD_DEPLOY" "jug()(address)")"
+MCD_CAT="$(seth call "$MCD_DEPLOY" "cat()(address)")"
+MCD_DOG="$(seth call "$MCD_DEPLOY" "dog()(address)")"
+MCD_VOW="$(seth call "$MCD_DEPLOY" "vow()(address)")"
+MCD_JOIN_DAI="$(seth call "$MCD_DEPLOY" "daiJoin()(address)")"
+MCD_FLAP="$(seth call "$MCD_DEPLOY" "flap()(address)")"
+MCD_FLOP="$(seth call "$MCD_DEPLOY" "flop()(address)")"
+MCD_SPOT="$(seth call "$MCD_DEPLOY" "spotter()(address)")"
+MCD_POT="$(seth call "$MCD_DEPLOY" "pot()(address)")"
+MCD_CURE="$(seth call "$MCD_DEPLOY" "cure()(address)")"
+MCD_END="$(seth call "$MCD_DEPLOY" "end()(address)")"
+MCD_ESM="$(seth call "$MCD_DEPLOY" "esm()(address)")"
+MCD_PAUSE="$(seth call "$MCD_DEPLOY" "pause()(address)")"
+MCD_PAUSE_PROXY="$(seth call "$(seth call "$MCD_DEPLOY" "pause()(address)")" "proxy()(address)")"
+MCD_DAI="$(seth call "$MCD_DEPLOY" "dai()(address)")"
+
+logAddr "MCD_VAT" "$MCD_VAT"
+logAddr "MCD_JUG" "$MCD_JUG"
+logAddr "MCD_CAT" "$MCD_CAT"
+logAddr "MCD_DOG" "$MCD_DOG"
+logAddr "MCD_VOW" "$MCD_VOW"
+logAddr "MCD_JOIN_DAI" "$MCD_JOIN_DAI"
+logAddr "MCD_FLAP" "$MCD_FLAP"
+logAddr "MCD_FLOP" "$MCD_FLOP"
+logAddr "MCD_SPOT" "$MCD_SPOT"
+logAddr "MCD_POT" "$MCD_POT"
+logAddr "MCD_CURE" "$MCD_CURE"
+logAddr "MCD_END" "$MCD_END"
+logAddr "MCD_ESM" "$MCD_ESM"
+logAddr "MCD_PAUSE" "$MCD_PAUSE"
+logAddr "MCD_PAUSE_PROXY" "$MCD_PAUSE_PROXY"
+logAddr "MCD_DAI" "$MCD_DAI"
+
+cat > "$OUT_DIR/load-core-addr-temp" << EOF
+#!/bin/bash
+export MCD_DEPLOY=$MCD_DEPLOY
+export MCD_GOV=$MCD_GOV
+export MCD_ADM=$MCD_ADM
+export MCD_VAT=$MCD_VAT
+export MCD_JUG=$MCD_JUG
+export MCD_CAT=$MCD_CAT
+export MCD_DOG=$MCD_DOG
+export MCD_VOW=$MCD_VOW
+export MCD_JOIN_DAI=$MCD_JOIN_DAI
+export MCD_FLAP=$MCD_FLAP
+export MCD_FLOP=$MCD_FLOP
+export MCD_SPOT=$MCD_SPOT
+export MCD_POT=$MCD_POT
+export MCD_CURE=$MCD_CURE
+export MCD_END=$MCD_END
+export MCD_ESM=$MCD_ESM
+export MCD_PAUSE=$MCD_PAUSE
+export MCD_PAUSE_PROXY=$MCD_PAUSE_PROXY
+export MCD_DAI=$MCD_DAI
+EOF
